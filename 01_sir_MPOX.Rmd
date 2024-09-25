@@ -1,6 +1,6 @@
 ---
 title: "Simulating MPOX disease SIR dynamics"
-author: "Shadrach Mintah, Benjamin Tommy Bavug, Kama Mary Ofuru, Victoria Nakasuja"
+author: "Shadrach Mintah, Benjamin Tommy Bavug, Kama Mary Ofuru, Victoria Nakalanzi"
 output: html_document
 ---
 
@@ -81,14 +81,13 @@ The model function in R is defined as follows:
 # 1. Define the SIR model
 sir_model <- function(t, y, parms) {
   with(as.list(c(y, parms)), {
-    dS <- -beta * S * I
-    dI <- beta * S * I - gamma * I
+    dS <- -beta * S * I/N
+    dI <- beta * S * I/N - gamma * I
     dR <- gamma * I
     return(list(c(dS, dI, dR)))
   })
 }
 ```
-
 
 
 ## Model parameters
@@ -102,7 +101,7 @@ $\beta$ is a composite of different terms and is not intuitive at face value, so
 ```{r sir-model-params}
 # 2. Define the parameter 
 
-R0 <- 2
+R0 <- 1.5
 
 # The infectious period is the average duration for which an individual remains infectious.
 infectious_period <- 14
@@ -128,8 +127,9 @@ Due to numerical stability issues, we will specify the populations as proportion
 We will assume the outbreak starts with $0.01$ infectious individual at the start of the simulation. The population is completely susceptible at the start of the simulation, so the number of susceptible individuals is $N - 0.01$. The number of recovered individuals is zero at the start of the simulation.
 ```{r sir-model-init}
 #3. Define the initial conditions
-N  <- 1
-I0 <- 0.01
+# Using Nigeria
+N  <- 206000000
+I0 <- 20
 # Initial conditions for S, I, R
 inits <- c(S = N - I0, I = I0, R = 0)
 ```
@@ -167,6 +167,7 @@ To work with the results more easily, we will convert the results to a data fram
 # Make it a data.frame
 results <- as.data.frame(results)
 head(results)
+tail(results)
 ```
 
 ### Plotting the results
@@ -202,7 +203,7 @@ sir_plot <- ggplot(
   )
 plot(sir_plot)
 ```
-```{r}
+```{r below_18yrs}
 knitr::opts_chunk$set(
   echo = FALSE,
   warning = FALSE,
@@ -212,8 +213,8 @@ knitr::opts_chunk$set(
 # 1. Define the SIR model
 sir_model <- function(t, y, parms) {
   with(as.list(c(y, parms)), {
-    dS <- -beta * S * I
-    dI <- beta * S * I - gamma * I
+    dS <- -beta * S * I/N
+    dI <- beta * S * I/N - gamma * I
     dR <- gamma * I
     return(list(c(dS, dI, dR)))
   })
@@ -221,7 +222,7 @@ sir_model <- function(t, y, parms) {
 
 # 2. Define the parameter 
 
-R0 <- 3
+R0 <- 1.5
 
 # The infectious period is the average duration for which an individual remains infectious.
 infectious_period <- 14
@@ -239,8 +240,8 @@ params <- c(
 )
 
 #3. Define the initial conditions
-N  <- 1
-I0 <- 0.01
+N  <- 220000000
+I0 <- 20
 # Initial conditions for S, I, R
 
 # 4. Define the time points to return results
@@ -285,14 +286,104 @@ sir_plot1 <- ggplot(
   ) +
   geom_line(linewidth = 1) +
   labs(
-    title = "SIR model",
+    title = "SIR model of MPOX (children below 18years)",
     x = "Time",
     y = "Number of individuals"
   )
 plot(sir_plot1)
 ```
 
-## R0 = c(1, 2, 3, 4, 5)
+```{r above_18yrs}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE
+)
+
+# 1. Define the SIR model
+sir_model <- function(t, y, parms) {
+  with(as.list(c(y, parms)), {
+    dS <- -beta * S * I/N
+    dI <- beta * S * I/N - gamma * I
+    dR <- gamma * I
+    return(list(c(dS, dI, dR)))
+  })
+}
+
+# 2. Define the parameter 
+
+R0 <- 1.5
+
+# The infectious period is the average duration for which an individual remains infectious.
+infectious_period <- 14
+# Remember gamma = 1/ infectious_period as discussed in the slides
+gamma <- 1/infectious_period 
+
+# The define beta, we will use the relation R0 = beta / gamma  because it is easier to interpret, that is, given an R0 and infectious period, we can calculate the corresponding beta value.
+# beta is not directly interpretable because it is a composite of a number of factors.
+beta <- R0 * gamma
+
+# The parameters
+params <- c(
+  beta = beta,
+  gamma = gamma
+)
+
+#3. Define the initial conditions
+N  <- 125000000
+I0 <- 20
+# Initial conditions for S, I, R
+
+# 4. Define the time points to return results
+dt <- 1:365
+
+#5. Solve the model
+# Load the necessary libraries
+library(deSolve)
+# Solve the model
+results <- deSolve::lsoda(
+  y = inits,
+  times = dt,
+  func = sir_model,
+  parms = params
+)
+
+#6. Manipulate and interpret the results
+# Make it a data.frame
+results <- as.data.frame(results)
+head(results)
+
+### Plotting the results
+
+# Load the necessary libraries
+library(ggplot2)
+library(tidyr)
+# Create data for ggplot2 by reshaping
+results_long <- results |>
+  pivot_longer(
+    cols = c(2:4),
+    names_to = "compartment",
+    values_to = "value"
+  )
+
+sir_plot1 <- ggplot(
+  data = results_long,
+  aes(
+    x = time,
+    y = value,
+    color = compartment
+  )
+  ) +
+  geom_line(linewidth = 1) +
+  labs(
+    title = "SIR model of MPOX (non-children above 18yrs)",
+    x = "Time",
+    y = "Number of individuals"
+  )
+plot(sir_plot1)
+```
+
+## R0 = c(1.1, 1.2, 1.5, 1.8, 2)
 ```{r}
 knitr::opts_chunk$set(
   echo = FALSE,
@@ -313,7 +404,7 @@ sir_model <- function(t, y, parms) {
 # 2. Define the parameter 
 
 # List of R0 values to simulate
-R0_values <- c(1, 2, 3, 4, 5)
+R0_values <- c(1.1, 1.2, 1.5, 1.8, 2)
 
 # The infectious period is the average duration for which an individual remains infectious.
 infectious_period <- 14
@@ -321,7 +412,7 @@ gamma <- 1 / infectious_period
 
 # 3. Define the initial conditions
 N  <- 1
-I0 <- 0.01
+I0 <- 0.001
 S0 <- N - I0
 R0_init <- 0
 inits <- c(S = S0, I = I0, R = R0_init)

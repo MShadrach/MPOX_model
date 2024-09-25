@@ -423,22 +423,6 @@ individuals, - <span class="math inline">\(I\)</span> is the number of
 infectious individuals, - <span class="math inline">\(R\)</span> is the
 number of removal individuals, - <span class="math inline">\(\beta\)</span> is the transmission rate, - <span class="math inline">\(\gamma\)</span> is the recovery rate.</p>
 <p>The model function in R is defined as follows:</p>
-<!-- ```{r, child=c('./scripts/rmd_child_02_model_function_components.Rmd')} -->
-<!-- ``` -->
-<p>Note the following about the function defined above:</p>
-<ul>
-<li><p>We use the <code>with()</code> function to evaluate the
-expressions in the context of the list created by
-<code>as.list(c(state, parameters))</code>. This allows us to access the
-state variables and parameters directly without having to use the
-<code>$</code> operator. This makes the code easier to read and write
-(Run <code>?with</code> in the R console and read the documentation of
-the first three arguments).</p></li>
-<li><p>The function returns a list of the derivatives of the state
-variables. This is the format expected by the <code>lsoda()</code>
-function (Run <code>?deSolve::lsoda</code> in the R console and read the
-documentation of the first three arguments).</p></li>
-</ul>
 </div>
 <div id="model-parameters" class="section level2">
 <h2>Model parameters</h2>
