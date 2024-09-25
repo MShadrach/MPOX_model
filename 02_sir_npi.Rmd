@@ -1,6 +1,6 @@
 ---
-title: "Simulating an SEIR model with births and deaths"
-author: "James Mba Azam"
+title: "Simulating an SIR model with births and deaths"
+author: "Shadrach Mintah"
 output: html_document
 ---
 
@@ -15,6 +15,72 @@ knitr::opts_chunk$set(
 In this practical, we will be simulating an SIR model with a non-pharmaceutical intervention.
 
 We will build on our previous SIR model code in `01_sir.Rmd` and modify it to include the time-varying transmission rate.
+In this walk through, we will be simulating an SIR model.
+
+The SIR model is a simple compartmental model used to describe the spread of infectious diseases in a population. The model divides the population into three compartments: susceptible (S), infectious (I), and recovered (R) individuals. The model equations describe the flow of individuals between these compartments based on the transmission rate ($\beta$) and the recovery rate ($\gamma$). The NPI
+
+<!-- ```{r, child=c('./scripts/rmd_child_01_lsoda_explanation.Rmd')} -->
+<!-- ``` -->
+
+We will be using the `{deSolve}` package to solve the model equations. The `{deSolve}` package is a powerful and flexible package for solving differential equations in R. It provides a wide range of solvers for different types of differential equations.
+
+Here, we will use the `lsoda()` function from the `{deSolve}` package to solve the SIR model. The `lsoda()` function is a wrapper for the Livermore Solver for Ordinary Differential Equations (LSODA) developed by Hindmarsh and Petzold. It is a robust and efficient solver for stiff and non-stiff differential equations.
+
+The `lsoda()` function takes, among others, the following arguments: - `func`: the model function that defines the differential equations, - `times`: the time points at which to return results, - `y`: the initial conditions, and - `parms`: the parameters of the model.
+
+## The model function
+
+Let's start by defining the model equations.
+
+Recall that the model equations for the SIR model are given by:
+
+\begin{align}
+\frac{dS}{dt} & = \color{orange}{-\beta S I} \\
+\frac{dI}{dt} & = \color{orange}{\beta S I} - \color{blue}{\gamma I} \\
+\frac{dR}{dt} & = \color{blue}{\gamma I}
+\end{align}
+
+
+\begin{align}
+\frac{dS}{dt} & = \color{orange}{-\beta(t) S I} \\
+\frac{dI}{dt} & = \color{blue}{\sigma E} - \color{red}{\gamma I} \\
+\frac{dR}{dt} & = \color{red}{\gamma I}
+\end{align}
+
+where:
+
+- $S$ is the number of susceptible individuals,
+- $I$ is the number of infectious individuals,
+- $R$ is the number of removed individuals,
+- $\beta$ is the transmission rate,
+- $\gamma$ is the recovery rate.
+
+
+##  Considering this
+where the time-varying transmission rate \(\beta(t)\) is defined as:
+
+\[
+\beta(t) =
+\begin{cases} 
+\beta_0 & \text{if } t < t_{NPI\_start} \text{ or } t > t_{NPI\_end} \\
+(1 - \epsilon) \beta_0 & \text{if } t_{NPI\_start} \le t \le t_{NPI\_end}
+\end{cases}
+\]
+
+where:
+
+-   $S$ is the number of susceptible individuals,
+-   $I$ is the number of infectious individuals,
+-   $R$ is the number of recovered individuals,
+-   $\beta$ is the transmission rate,
+-   $\sigma$ is the rate of progression from exposed to infectious,
+-   $\gamma$ is the recovery rate,
+-   $\mu$ is the birth and death rate,
+-   $\epsilon$ is the NPI effectiveness,
+-   $N$ is the total population.
+
+
+The model function in R is defined as follows:
 
 ## The model function
 
