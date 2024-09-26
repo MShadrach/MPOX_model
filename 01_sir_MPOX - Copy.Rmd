@@ -81,8 +81,8 @@ The model function in R is defined as follows:
 # 1. Define the SIR model
 sir_model <- function(t, y, parms) {
   with(as.list(c(y, parms)), {
-    dS <- -beta * S * I
-    dI <- beta * S * I - gamma * I
+    dS <- -beta * S * I/N
+    dI <- beta * S * I/N - gamma * I
     dR <- gamma * I
     return(list(c(dS, dI, dR)))
   })
@@ -110,11 +110,7 @@ gamma <- 1/infectious_period
 
 # The define beta, we will use the relation R0 = beta / gamma  because it is easier to interpret, that is, given an R0 and infectious period, we can calculate the corresponding beta value.
 # beta is not directly interpretable because it is a composite of a number of factors.
-beta <- R0 * gamma/N
-
-
-beta1 <- R0 * gamma/N #transmission rate for  direct and airborne contact
-beta2 <- R0 * gamma/N2 #transmission rate for sexual contact
+beta <- R0 * gamma
 
 # The parameters
 params <- c(
@@ -132,10 +128,7 @@ We will assume the outbreak starts with $0.01$ infectious individual at the star
 ```{r sir-model-init}
 #3. Define the initial conditions
 # Using Nigeria
-N  <- 220000000
-N1 <- 95000000 # 45% of 220million are under 18years (Nigeria)
-N2 <- 125000000 # 55% of 220million are above 18years (Nigeria)
-
+N  <- 206000000
 I0 <- 20
 # Initial conditions for S, I, R
 inits <- c(S = N - I0, I = I0, R = 0)
@@ -210,329 +203,7 @@ sir_plot <- ggplot(
   )
 plot(sir_plot)
 ```
-```{r coupled_model}
-knitr::opts_chunk$set(
-  echo = FALSE,
-  warning = FALSE,
-  message = FALSE
-)
-
-# # 1. Define the SIR model
-# sir_model <- function(t, y, parms) {
-#   with(as.list(c(y, parms)), {
-#     dS <- -beta * S * I
-#     dI <- beta * S * I - gamma * I
-#     dR <- gamma * I
-#     return(list(c(dS, dI, dR)))
-#   })
-# }
-# 
-# 
-# sir_model_a <- function(t, y, parms) {
-#   with(as.list(c(y, parms)), {
-#     dS <- -(beta_a) * S * I
-#     dI <- (beta_a) * S * I - gamma * I
-#     dR <- gamma * I
-#     return(list(c(dS, dI, dR)))
-#   })
-# }
-
-sir_model_c <- function(t, y, parms) {
-  with(as.list(c(y, parms)), {
-    dSa <- (-(beta_a) * Sa * (Ia+Ic)/N2)
-    dIa <- (beta_a) * Sa * (Ia+Ic)/N2  - gamma * (Ia)
-    dRa <- gamma * Ia
-    dSc <- -beta * Sc * (Ic+Ia)/N1
-    dIc <- beta * Sc *(Ic+Ia)/N1 - gamma *(Ic)
-    dRc <- gamma *(Ic)
-    return(list(c(dSa, dSc, dIa, dIc, dRa, dRc)))
-  })
-}
-
-
-
-# sir_model_c <- function(t, y, parms) {
-#   with(as.list(c(y, parms)), {
-#     # Prevent populations from going negative by imposing conditions
-#     Sa <- max(Sa, 0)
-#     Sc <- max(Sc, 0)
-#     Ia <- max(Ia, 0)
-#     Ic <- max(Ic, 0)
-# 
-#     dSa <- -(beta_a) * Sa * (Ia + Ic) / N2
-#     dIa <- (beta_a) * Sa * (Ia + Ic) / N2 - gamma * Ia
-#     dRa <- gamma * Ia
-# 
-#     dSc <- -beta * Sc * (Ia + Ic) / N1
-#     dIc <- beta * Sc * (Ia + Ic) / N1 - gamma * Ic
-#     dRc <- gamma * Ic
-# 
-#     return(list(c(dSa, dSc, dIa, dIc, dRa, dRc)))
-#   })
-# }
-
-# Adjust the parameters if necessary
-# beta = 0.5
-# beta_a = 0.7
-
-# Recalculate or adjust the values based on more realistic estimates of transmission
-
-# Optionally: Increase the time resolution
-# dt <- seq(0, 365, by = 0.1)  # Finer time resolution for the solver
-
-
-I0 <- 20
-
-Ia0=I0
-Ic0=I0
-
-# test=2*(beta_a) * (N2-20) * I0/N2 -gamma * (I0)
-
-# 2. Define the parameter 
-
-# Using Nigeria
-N  <- 220000000
-N1 <- 95000000 # 45% of 220million are under 18years (Nigeria)
-N2 <- 125000000 # 55% of 220million are above 18years (Nigeria)
-
-# Initial conditions for S, I, R
-# inits <- c(S = N2 - I0, I = I0, R = 0)
-inits <- c(Sa = N2 - Ia0, Ia = Ia0, Ra = 0, Sc = N1 - Ic0, Ic = Ic0, Rc = 0)
-
-# R0 <- 1.5
-
-# The infectious period is the average duration for which an individual remains infectious.
-# infectious_period <- 14
-# Remember gamma = 1/ infectious_period as discussed in the slides
-# gamma <- 1/infectious_period 
-
-# The define beta, we will use the relation R0 = beta / gamma  because it is easier to interpret, that is, given an R0 and infectious period, we can calculate the corresponding beta value.
-# beta is not directly interpretable because it is a composite of a number of factors.
-# beta <- R0 * gamma/N
-
-# beta1 <- R0 * gamma/N #transmission rate for  direct and airborne contact
-# beta2 <- R0 * gamma/N2 #transmission rate for sexual contact
-
-# 
-# beta_a = beta1 + beta2
-beta = 1.5
-beta_a = 1.9
-gamma = 0.1
-# The parameters
-params <- c(
-  beta = beta,
- beta_a = beta_a,
-  gamma = gamma
-)
-
-#3. Define the initial conditions
-
-
-# Initial conditions for S, I, R
-
-# 4. Define the time points to return results
-dt <- 1:365
-
-#5. Solve the model
-# Load the necessary libraries
-library(deSolve)
-# Solve the model
-results <- deSolve::lsoda(
-  y = inits,
-  times = dt,
-  func = sir_model_c,
-  parms = params
-)
-
-#6. Manipulate and interpret the results
-# Make it a data.frame
-results <- as.data.frame(results)
-head(results)
-
-### Plotting the results
-
-# Load the necessary libraries
-library(ggplot2)
-library(tidyr)
-# Create data for ggplot2 by reshaping
-results_long <- results |>
-  pivot_longer(
-    cols = c(2:7),
-    names_to = "compartment",
-    values_to = "value"
-  )
-
-sir_plot1 <- ggplot(
-  data = results_long,
-  aes(
-    x = time,
-    y = value,
-    color = compartment
-  )
-  ) +
-  geom_line(linewidth = 1) +
-  labs(
-    title = "SIR model of MPOX (infection from coupled)",
-    x = "Time",
-    y = "Number of individuals"
-  )
-plot(sir_plot1)
-```
-## Trying the coupled model again
-
-```{r coupled_model}
-knitr::opts_chunk$set(
-  echo = FALSE,
-  warning = FALSE,
-  message = FALSE
-)
-
-# # 1. Define the SIR model
-# sir_model <- function(t, y, parms) {
-#   with(as.list(c(y, parms)), {
-#     dS <- -beta * S * I
-#     dI <- beta * S * I - gamma * I
-#     dR <- gamma * I
-#     return(list(c(dS, dI, dR)))
-#   })
-# }
-# 
-# 
-# sir_model_a <- function(t, y, parms) {
-#   with(as.list(c(y, parms)), {
-#     dS <- -(beta_a) * S * I
-#     dI <- (beta_a) * S * I - gamma * I
-#     dR <- gamma * I
-#     return(list(c(dS, dI, dR)))
-#   })
-# }
-# 
-# sir_model_c <- function(t, y, parms) {
-#   with(as.list(c(y, parms)), {
-#     dSa <- -(beta_a) * Sa * (Ia+Ic)/125000000
-#     dIa <- (beta_a) * Sa * (Ia+Ic)/125000000  -gamma * (Ia)
-#     dRa <- gamma * Ia
-#     dSc <- -beta * Sc * (Ic+Ia)/95000000
-#     dIc <- beta * Sc *(Ic+Ia)/95000000 - gamma *(Ic)
-#     dRc <- gamma *(Ic)
-#     return(list(c(dSa, dSc, dIa, dIc, dRa, dRc)))
-#   })
-# }
-
-sir_model_c <- function(t, y, parms) {
-  with(as.list(c(y, parms)), {
-    dSa <- -(beta_a) * Sa
-    dIa <- (beta_a) * Sa  - gamma
-    dRa <- gamma * Ia
-    dSc <- -beta * Sc 
-    dIc <- beta * Sc - gamma
-    dRc <- gamma
-    return(list(c(dSa, dSc, dIa, dIc, dRa, dRc)))
-  })
-}
-
-
-I0 <- 20
-
-Ia0=I0
-Ic0=I0
-
-# test=2*(beta_a) * (N2-20) * I0/N2 -gamma * (I0)
-
-# 2. Define the parameter 
-
-# Using Nigeria
-N  <- 220000000
-N1 <- 95000000 # 45% of 220million are under 18years (Nigeria)
-N2 <- 125000000 # 55% of 220million are above 18years (Nigeria)
-
-# Initial conditions for S, I, R
-# inits <- c(S = N2 - I0, I = I0, R = 0)
-inits <- c(Sa = N2 - Ia0, Ia = Ia0, Ra = 0, Sc = N1 - Ic0, Ic = Ic0, Rc = 0)
-
-R0 <- 1.5
-
-# The infectious period is the average duration for which an individual remains infectious.
-infectious_period <- 14
-# Remember gamma = 1/ infectious_period as discussed in the slides
-gamma <- 1/infectious_period 
-
-# The define beta, we will use the relation R0 = beta / gamma  because it is easier to interpret, that is, given an R0 and infectious period, we can calculate the corresponding beta value.
-# beta is not directly interpretable because it is a composite of a number of factors.
-# beta <- R0 * gamma/N
-# 
-# beta1 <- R0 * gamma/N #transmission rate for  direct and airborne contact
-# beta2 <- R0 * gamma/N2 #transmission rate for sexual contact
-# 
-# beta_a = beta1 + beta2
-# beta = beta1
-
-beta = 0.5
-beta_a = 0.7
-# The parameters
-params <- c(
-  beta = beta,
- beta_a = beta_a,
-  gamma = gamma
-)
-
-#3. Define the initial conditions
-
-
-# Initial conditions for S, I, R
-
-# 4. Define the time points to return results
-dt <- 1:365
-
-#5. Solve the model
-# Load the necessary libraries
-library(deSolve)
-# Solve the model
-results <- deSolve::lsoda(
-  y = inits,
-  times = dt,
-  func = sir_model_c,
-  parms = params
-)
-
-#6. Manipulate and interpret the results
-# Make it a data.frame
-results <- as.data.frame(results)
-head(results)
-
-### Plotting the results
-
-# Load the necessary libraries
-library(ggplot2)
-library(tidyr)
-# Create data for ggplot2 by reshaping
-results_long <- results |>
-  pivot_longer(
-    cols = c(2:7),
-    names_to = "compartment",
-    values_to = "value"
-  )
-
-sir_plot1 <- ggplot(
-  data = results_long,
-  aes(
-    x = time,
-    y = value,
-    color = compartment
-  )
-  ) +
-  geom_line(linewidth = 1) +
-  labs(
-    title = "SIR model of MPOX (infection from coupled)",
-    x = "Time",
-    y = "Number of individuals"
-  )
-plot(sir_plot1)
-```
-
-
-
-```{r above_18yrs}
+```{r below_18yrs}
 knitr::opts_chunk$set(
   echo = FALSE,
   warning = FALSE,
@@ -542,8 +213,8 @@ knitr::opts_chunk$set(
 # 1. Define the SIR model
 sir_model <- function(t, y, parms) {
   with(as.list(c(y, parms)), {
-    dS <- -beta * S * I
-    dI <- beta * S * I - gamma * I
+    dS <- -beta * S * I/N
+    dI <- beta * S * I/N - gamma * I
     dR <- gamma * I
     return(list(c(dS, dI, dR)))
   })
@@ -560,7 +231,97 @@ gamma <- 1/infectious_period
 
 # The define beta, we will use the relation R0 = beta / gamma  because it is easier to interpret, that is, given an R0 and infectious period, we can calculate the corresponding beta value.
 # beta is not directly interpretable because it is a composite of a number of factors.
-beta <- R0 * gamma/N
+beta <- R0 * gamma
+
+# The parameters
+params <- c(
+  beta = beta,
+  gamma = gamma
+)
+
+#3. Define the initial conditions
+N  <- 220000000
+I0 <- 20
+# Initial conditions for S, I, R
+
+# 4. Define the time points to return results
+dt <- 1:365
+
+#5. Solve the model
+# Load the necessary libraries
+library(deSolve)
+# Solve the model
+results <- deSolve::lsoda(
+  y = inits,
+  times = dt,
+  func = sir_model,
+  parms = params
+)
+
+#6. Manipulate and interpret the results
+# Make it a data.frame
+results <- as.data.frame(results)
+head(results)
+
+### Plotting the results
+
+# Load the necessary libraries
+library(ggplot2)
+library(tidyr)
+# Create data for ggplot2 by reshaping
+results_long <- results |>
+  pivot_longer(
+    cols = c(2:4),
+    names_to = "compartment",
+    values_to = "value"
+  )
+
+sir_plot1 <- ggplot(
+  data = results_long,
+  aes(
+    x = time,
+    y = value,
+    color = compartment
+  )
+  ) +
+  geom_line(linewidth = 1) +
+  labs(
+    title = "SIR model of MPOX (children below 18years)",
+    x = "Time",
+    y = "Number of individuals"
+  )
+plot(sir_plot1)
+```
+
+```{r above_18yrs}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE
+)
+
+# 1. Define the SIR model
+sir_model <- function(t, y, parms) {
+  with(as.list(c(y, parms)), {
+    dS <- -beta * S * I/N
+    dI <- beta * S * I/N - gamma * I
+    dR <- gamma * I
+    return(list(c(dS, dI, dR)))
+  })
+}
+
+# 2. Define the parameter 
+
+R0 <- 1.5
+
+# The infectious period is the average duration for which an individual remains infectious.
+infectious_period <- 14
+# Remember gamma = 1/ infectious_period as discussed in the slides
+gamma <- 1/infectious_period 
+
+# The define beta, we will use the relation R0 = beta / gamma  because it is easier to interpret, that is, given an R0 and infectious period, we can calculate the corresponding beta value.
+# beta is not directly interpretable because it is a composite of a number of factors.
+beta <- R0 * gamma
 
 # The parameters
 params <- c(
@@ -571,10 +332,6 @@ params <- c(
 #3. Define the initial conditions
 N  <- 125000000
 I0 <- 20
-
-# Initial conditions for S, I, R
-inits <- c(S = N - I0, I = I0, R = 0)
-
 # Initial conditions for S, I, R
 
 # 4. Define the time points to return results
@@ -620,137 +377,6 @@ sir_plot1 <- ggplot(
   geom_line(linewidth = 1) +
   labs(
     title = "SIR model of MPOX (non-children above 18yrs)",
-    x = "Time",
-    y = "Number of individuals"
-  )
-plot(sir_plot1)
-```
-
-
-```{r below_18yrs}
-knitr::opts_chunk$set(
-  echo = FALSE,
-  warning = FALSE,
-  message = FALSE
-)
-
-# 1. Define the SIR model
-# sir_model <- function(t, y, parms) {
-#   with(as.list(c(y, parms)), {
-#     dS <- -beta * S * I
-#     dI <- beta * S * I - gamma * I
-#     dR <- gamma * I
-#     return(list(c(dS, dI, dR)))
-#   })
-# }
-
-
-sir_model_u <- function(t, y, parms) {
-  with(as.list(c(y, parms)), {
-    dS <- -(beta_a) * S * I
-    dI <- (beta_a) * S * I - gamma * I
-    dR <- gamma * I
-    return(list(c(dS, dI, dR)))
-  })
-}
-
-# sir_model_a <- function(t, y, parms) {
-#   with(as.list(c(y, parms)), {
-#     dS <- -(beta_a) * S * I
-#     dI <- (beta_a) * S * I - gamma * I
-#     dR <- gamma * I
-#     return(list(c(dS, dI, dR)))
-#   })
-# }
-
-
-# 2. Define the parameter 
-
-# Using Nigeria
-N  <- 220000000
-N1 <- 95000000 # 45% of 220million are under 18years (Nigeria)
-N2 <- 125000000 # 55% of 220million are above 18years (Nigeria)
-
-# Initial conditions for S, I, R
-inits <- c(S = N - I0, I = I0, R = 0)
-
-R0 <- 1.5
-
-# The infectious period is the average duration for which an individual remains infectious.
-infectious_period <- 14
-# Remember gamma = 1/ infectious_period as discussed in the slides
-gamma <- 1/infectious_period 
-
-# The define beta, we will use the relation R0 = beta / gamma  because it is easier to interpret, that is, given an R0 and infectious period, we can calculate the corresponding beta value.
-# beta is not directly interpretable because it is a composite of a number of factors.
-beta <- R0 * gamma/N
-
-beta1 <- R0 * gamma/N #transmission rate for  direct and airborne contact
-beta2 <- R0 * gamma/N2 #transmission rate for sexual contact
-
-
-
-
-beta_a = beta1 + beta2
-
-beta_a=0.7
-bata=0.5
-# The parameters
-params <- c(
-  beta = beta1,
-  gamma = gamma
-)
-
-#3. Define the initial conditions
-
-
-
-I0 <- 20
-# Initial conditions for S, I, R
-
-# 4. Define the time points to return results
-dt <- 1:365
-
-#5. Solve the model
-# Load the necessary libraries
-library(deSolve)
-# Solve the model
-results <- deSolve::lsoda(
-  y = inits,
-  times = dt,
-  func = sir_model_u,
-  parms = params
-)
-
-#6. Manipulate and interpret the results
-# Make it a data.frame
-results <- as.data.frame(results)
-head(results)
-
-### Plotting the results
-
-# Load the necessary libraries
-library(ggplot2)
-library(tidyr)
-# Create data for ggplot2 by reshaping
-results_long <- results |>
-  pivot_longer(
-    cols = c(2:4),
-    names_to = "compartment",
-    values_to = "value"
-  )
-
-sir_plot1 <- ggplot(
-  data = results_long,
-  aes(
-    x = time,
-    y = value,
-    color = compartment
-  )
-  ) +
-  geom_line(linewidth = 1) +
-  labs(
-    title = "SIR model of MPOX (infection from people below 18years)",
     x = "Time",
     y = "Number of individuals"
   )
