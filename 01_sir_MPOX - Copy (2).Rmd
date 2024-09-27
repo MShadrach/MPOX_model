@@ -1,5 +1,5 @@
 ---
-title: "Simulating MPOX disease SIR dynamics"
+title: "Simulating MPOX disease SIR dynamics, considering contact mixing"
 author: "Shadrach Mintah, Benjamin Tommy Bavug, Kama Mary Ofuru, Victoria Nakalanzi"
 output: html_document
 ---

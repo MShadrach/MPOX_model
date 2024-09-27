@@ -78,6 +78,8 @@ where:
 - $\gamma$ is the recovered rate.
 
 
+
+
 but
 
 \begin{align}
@@ -94,6 +96,19 @@ but
 
 
 which translates into:
+
+```{r}
+# Load the necessary libraries
+library(grid)
+library(jpeg)
+
+# Read the image
+img <- readJPEG("C:/Users/Administrator/Desktop/MPOX_model/image/init_img.jpg")
+
+# Display image using grid
+grid.raster(img)
+
+```
 
 Transmission from children
 
@@ -124,6 +139,19 @@ where:
 $However$
 
 To account for CONTACT MIXING among children and adults after being infected:
+
+```{r}
+# Load the necessary libraries
+library(grid)
+library(jpeg)
+
+# Read the image
+img <- readJPEG("C:/Users/Administrator/Desktop/MPOX_model/image/contact_img.jpg")  # Ensure the path is correct
+
+# Display image using grid
+grid.raster(img)
+
+```
 
 for children
 
@@ -578,3 +606,5 @@ sir_plot_combined <- ggplot(
 plot(sir_plot_combined)
 
 ```
+
+### https://github.com/MShadrach/MPOX_model.git
