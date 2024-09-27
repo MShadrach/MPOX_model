@@ -173,9 +173,9 @@ sir_model_children <- function(t, y, parms) {
 }
 
 # Population and parameters for children
-N_c <- 95000000  # Number of children under 18 years (45% of total population in Nigeria)
+N <- 220000000  # Number of children under 18 years (45% of total population in Nigeria)
 I0_c <- 20       # Initial number of infected children
-S0_c <- N_c - I0_c  # Initial number of susceptible children
+S0_c <- N - I0_c  # Initial number of susceptible children
 
 # Define R0, infectious period, and gamma
 R0_c <- 1.8
@@ -183,7 +183,7 @@ infectious_period_c <- 14
 gamma_c <- 1 / infectious_period_c  # Recovery rate for children
 
 # Calculate beta using the formula: R0 = beta / gamma
-beta_c <- R0_c * gamma_c / N_c  # Transmission rate for children
+beta_c <- R0_c * gamma_c / N  # Transmission rate for children
 
 # Parameters for the children's model
 params_c <- c(beta_c = beta_c, gamma = gamma_c)
@@ -294,6 +294,7 @@ sir_model_mixed <- function(t, y, parms) {
 # Population size and parameters
 N_c <- 95000000   # Number of children under 18 years
 N_a <- 125000000  # Number of adults above 18 years
+N <- N_c + N_a    # Total population
 I0_c <- 10        # Initial infected in children
 I0_a <- 10        # Initial infected in adults
 
@@ -305,10 +306,10 @@ infectious_period <- 14
 gamma <- 1 / infectious_period
 
 # Transmission rates
-beta_cc <- R0 * gamma / N_c  # Child to child
+beta_cc <- R0 * gamma / N  # Child to child
 beta_aa <- R0 * gamma / N_a  # Adult to adult
-beta_ca <- R0 * gamma / N_a  # Child to adult
-beta_ac <- R0 * gamma / N_c  # Adult to child
+beta_ca <- R0 * gamma / N  # Child to adult
+beta_ac <- R0 * gamma / N_a  # Adult to child
 
 # Parameters for the mixed model
 params_mixed <- c(
