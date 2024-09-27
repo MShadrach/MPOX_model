@@ -12,24 +12,46 @@ knitr::opts_chunk$set(
 )
 ```
 
-In this walk through, we will be simulating an SIR model.
+MPOX (Monkeypox) is a viral zoonotic disease caused by the Monkeypox virus, primarily affecting central and West African regions but recently spreading to other parts of the world. It transmits from animals to humans and between humans through close contact with lesions, body fluids, or respiratory droplets. Symptoms include fever, rash, and swollen lymph nodes.
 
-The SIR model is a simple compartmental model used to describe the spread of MPOX, which is an infectious disease in a population. The model divides the population into three compartments: susceptible (S), infectious (I), and recovered (R) individuals. The model equations describe the flow of individuals between these compartments based on the transmission rate ($\beta$) and the recovery rate ($\gamma$).
+This model simulates the spread of MPOX in two distinct age groups—children and adults—using an SIR (Susceptible, Infected, Recovered) framework. It explores disease dynamics within and across these groups, focusing on how the virus spreads, the rate of recovery, and immunity formation over time.
 
+The model divides the population into three compartments: Susceptible (S), Infectious (I), and Recovered (R) individuals. The model equations describe the flow of individuals between these compartments based on the transmission rate ($\beta$) and the recovery rate ($\gamma$).
+
+
+
+## ASSUMPTIONS
+
+The SIR (Susceptible-Infected-Recovered) models for children and adults make several key assumptions about the population, transmission dynamics, and disease progression. Here is a list of the main assumptions:
+
+1. Population Assumptions
+- Homogeneous Mixing: The model assumes that individuals within each age group (children or adults) mix homogeneously, meaning every susceptible individual has an equal chance of coming into contact with an infected individual.
+- Fixed Population Size: The total population size is constant over time (N = S + I + R), meaning no births, deaths, or migration in or out of the population.
+- Closed Population: The population is closed to external influences such as new infections from outside the population or changes due to natural death rates not related to the disease.
+- Age Segmentation: The population is segmented into two distinct groups (children and adults) with no crossover between these groups in terms of contact or infection unless explicitly modeled.
+
+2. Disease Transmission Assumptions
+- Direct Transmission: The disease is transmitted through direct contact between susceptible and infected individuals. For children, this transmission is modeled with parameter beta_c, and for adults, it's modeled with beta_a.
+- Constant Transmission Rate: The transmission rate (represented by beta) is constant over time and uniform across the population within each age group.
+- No Latent Period: The model assumes that once an individual is infected, they are immediately capable of transmitting the disease (i.e., no latent or exposed state in the model).
+
+3. Recovery and Infectiousness Assumptions
+- Fixed Infectious Period: Infected individuals recover at a constant rate (gamma), which is the inverse of the infectious period (assumed to be 14 days in this model).
+- Complete Recovery: Once recovered, individuals are assumed to gain complete immunity and cannot be reinfected (hence the transition from I to R).
+- No Disease-Induced Death: The model assumes no deaths due to the disease (i.e., infected individuals either recover or remain infected but do not die).
+
+4. Initial Conditions Assumptions
+- Initial Infected Proportion: A small portion of the population is infected at the start (I0), and the rest are susceptible (S0 = N - I0). No one starts in the recovered (R) category.
+- Equal Infectiousness Across Age Groups: While the population is split into children and adults, it is assumed that individuals within each group have the same transmission and recovery rates.
+
+5. No Behavior Changes Over Time
+- No Intervention: The model does not account for behavioral changes, medical interventions, vaccination, or other non-pharmaceutical interventions (e.g., quarantine, social distancing) that could alter the course of the disease.
+
+6. Time Scale
+- Fixed Time Horizon: The model runs over a fixed period (365 days in this case) with no changes to model parameters or structure during this time.
 
 
 ## The model function
-
-We have the following $assumptions$:
-
-- The is natural immunity after recovery
-- There is homogeneity of the population
-- There is a constant removal rate due to other causes (1/10)
-- Transmission is between human to huma contact
-
-
-
-We start by defining the model equations.
 
 The SIR model equations is given by:
 
@@ -50,9 +72,10 @@ where:
 
 
 but
+
 \begin{align}
-\beta_1 = (b1 + b2) ---(1) \\
-\beta_2 = b3 ------(2) 
+\beta_c = (b1 + b2) ---(1) \\
+\beta_a = b3 ------(2) 
 \end{align}
 
 - $b1$ is the transmission by direct contact
@@ -63,28 +86,21 @@ but
 - $\beta_2$ is the transmission rate via sexual contact
 
 
-
 which translates into:
 
 Transmission from children
 
 \begin{align}
-\frac{dS_c}{dt} & = \color{orange}{-\beta_1 S_c I_c} \\
-\frac{dI_c}{dt} & = \color{orange}{\beta_1 S_c I_c} - \color{blue}{\gamma I_c} \\
+\frac{dS_c}{dt} & = \color{orange}{-\beta_c S_c I_c} \\
+\frac{dI_c}{dt} & = \color{orange}{\beta_c S_c I_c} - \color{blue}{\gamma I_c} \\
 \frac{dR_c}{dt} & = \color{blue}{\gamma I_c}
 \end{align}
-
-and 
 
 Transmission from adults
 
 \begin{align}
-\frac{dS_a}{dt} & = \color{orange}{-\beta_1 S_a I_a} \\
-\frac{dS_a}{dt} & = \color{orange}{-\beta_2 S_a I_a} \\
-
-\frac{dI_a}{dt} & = \color{orange}{\beta_1 S_a I_a} - \color{blue}{\gamma I_a} \\
-\frac{dI_a}{dt} & = \color{orange}{\beta_2 S_a I_a} - \color{blue}{\gamma I_a} \\
-
+\frac{dS_a}{dt} & = \color{orange}{-\beta_a S_a I_a} \\
+\frac{dI_a}{dt} & = \color{orange}{\beta_a S_a I_a} - \color{blue}{\gamma I_a} \\
 \frac{dR_a}{dt} & = \color{blue}{\gamma I_a}
 \end{align}
 
@@ -98,7 +114,38 @@ where:
 - $I_c$ is the number of infectious individuals (children),
 - $R_c$ is the number of removal individuals(children)
 
+$However$
 
+To account for CONTACT MIXING among children and adults after being infected:
+
+for children
+
+\begin{align}
+\frac{dS_c}{dt} & = \color{orange}{-(\beta_cc S_c I_c + \beta_ac S_c I_a)} \\
+\frac{dI_c}{dt} & = \color{orange}{(\beta_cc S_c I_c + \beta_ac S_c I_a)} - \color{blue}{\gamma I_c} \\
+\frac{dR_c}{dt} & = \color{blue}{\gamma I_c}
+\end{align}
+
+for adults
+
+\begin{align}
+\frac{dS_a}{dt} & = \color{orange}{-(\beta_aa S_a I_a + \beta_ca S_c I_a)} \\
+\frac{dI_a}{dt} & = \color{orange}{(\beta_aa S_a I_a + \beta_ca S_c I_a)} - \color{blue}{\gamma I_a} \\
+\frac{dR_a}{dt} & = \color{blue}{\gamma I_a}
+\end{align}
+
+where:
+
+- $\beta_cc$ is Child to child transmission rate ($\beta_cc$ = $R_0$ * gamma / $N_c$)
+- $\beta_aa$ is Adult to adult transmission rate ($\beta_aa$ = $R_0$ * gamma / $N_a$)
+- $\beta_ca$ is Child to adult transmission rate ($\beta_ca$ = $R_0$ * gamma / $N_a$)
+- $\beta_ac$ is Adult to child transmission rate ($\beta_ac$ = $R_0$ * gamma / $N_c$)
+
+and
+
+- $R_0$ is the Reproduction number of MPOX ($R_0$ = 1.8 for our discussion)
+- $N_c$ is population of children below 18 years (<18yrs) in the country (Nigeria)
+- $N_a$ is population of children above 18 years (>18yrs) in the country (Nigeria)
 
 ## Model for children below 18yrs
 
@@ -214,7 +261,7 @@ sir_plot1 <- ggplot(
 plot(sir_plot1)
 ```
 
-```{r}
+```{r SIR_below_18yrs}
 # Define the SIR model for children
 sir_model_children <- function(t, y, parms) {
   with(as.list(c(y, parms)), {
@@ -253,6 +300,7 @@ results_children <- deSolve::lsoda(y = inits_c, times = time_c, func = sir_model
 # Convert the results to a data frame
 results_children <- as.data.frame(results_children)
 head(results_children)
+tail(results_children)
 
 # Plotting the results for children
 results_long_children <- results_children |> 
@@ -378,7 +426,9 @@ sir_plot1 <- ggplot(
   )
 plot(sir_plot1)
 ```
-```{r}
+
+
+```{r SIR_above_18yrs}
 # Define the SIR model for adults
 sir_model_adults <- function(t, y, parms) {
   with(as.list(c(y, parms)), {
@@ -528,7 +578,8 @@ sir_plot_mixed <- ggplot(
 plot(sir_plot_mixed)
 
 ```
-## Explanation:
+
+## Explanation
 
 SIR Compartments: We have separate compartments for children (S_c, I_c, R_c) and adults (S_a, I_a, R_a).
 
